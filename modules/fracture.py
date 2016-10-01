@@ -181,10 +181,13 @@ class Fracture(object):
 
     self.fid_node[new, :] = fid_node
     self.visited[num:num+n] = 1
-    self.active[mask.nonzero()[0], 0] = new
+
+    #TODO
+    # self.active[mask.nonzero()[0], 0] = new
+    self.active[:n, 0] = new
 
     self.num += n
-    # self.anum += n
+    self.anum = n
     self.fnum += n
 
     return True
@@ -220,7 +223,6 @@ class Fracture(object):
         )
 
     ndxy[:,:] = -10
-    print('num', num)
 
     self.cuda_step(
         npint(self.nz),

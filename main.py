@@ -13,8 +13,8 @@ SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-FRAC_DOT = 0.73
-FRAC_DST = 0.05
+FRAC_DOT = 0.95
+FRAC_DST = 0.01
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
@@ -47,15 +47,9 @@ def show(render, f):
     for x, y in frac:
       render.circle(x, y, ONE, fill=True)
     render.circle(x, y, FRAC_DST, fill=False)
-  # print(f.active[:f.anum])
 
-
-  print('show fracs')
-  for frac in f.get_fractures_inds():
-    print(frac)
-
-  # print(f.active[:f.anum])
-  # for frac in f.get_fractures():
+  # print('show fracs')
+  # for frac in f.get_fractures_inds():
   #   print(frac)
 
 
@@ -88,13 +82,10 @@ def main():
       )
 
   for _ in range(3):
-    F.blow(1, EDGE+random(2)*(1.0-2.0*EDGE))
+    F.blow(5, EDGE+random(2)*(1.0-2.0*EDGE))
 
   def wrap(render):
-
-    print('####################################################')
-
-    print(F.num, F.fnum, F.anum)
+    print(F.num, F.fnum, F.anum, '########################################')
     res = F.step()
 
     if not F.itt % 1:
@@ -104,7 +95,7 @@ def main():
 
     # n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
     # print('spawned: {:d}'.format(n))
-    return True
+    return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
   render.set_line_width(ONE)
