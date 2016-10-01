@@ -36,9 +36,6 @@ __device__ int get_fow_items(
   float fdy = dxy[ff+1];
 
   int count = 0;
-  /*tmp[ii] = fdx;*/
-  /*tmp[ii+1] = fdy;*/
-
   for (int a=max(zx-1,0);a<min(zx+2,nz);a++){
     for (int b=max(zy-1,0);b<min(zy+2,nz);b++){
       zk = a*nz+b;
@@ -59,10 +56,10 @@ __device__ int get_fow_items(
         if (dd>0.0f && dd<fow_dst && dt>fow_dot){
           proximity[count] = jj/2;
           count += 1;
-          tmp[ii] = dd;
-          tmp[ii+1] = (float)count;
         }
         else{
+          tmp[ii] = dd;
+          tmp[ii+1] = dt;
         }
       }
     }

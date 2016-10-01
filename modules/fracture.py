@@ -178,17 +178,15 @@ class Fracture(object):
         self.fid_node[active, 0],
         arange(num, num+n)
         ))
+
     self.fid_node[new, :] = fid_node
-
     self.visited[num:num+n] = 1
-
     self.active[mask.nonzero()[0], 0] = new
 
-    self.num += 1
+    self.num += n
     # self.anum += n
     self.fnum += n
 
-    # print('ndxy\n', ndxy, '\n')
     return True
 
   def step(self):
@@ -218,13 +216,11 @@ class Fracture(object):
         drv.InOut(self.zone_num),
         drv.InOut(self.zone_node),
         block=(self.threads,1,1),
-        grid=(num//self.threads + 1, 1)
+        grid=(int(num//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    # print(self.zone_num)
-    # print(self.zone_num.max())
-
     ndxy[:,:] = -10
+    print('num', num)
 
     self.cuda_step(
         npint(self.nz),
@@ -244,15 +240,15 @@ class Fracture(object):
         drv.In(self.zone_num),
         drv.In(self.zone_node),
         block=(self.threads,1,1),
-        grid=(anum//self.threads + 1, 1)
+        grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
-
-    print('active\n', active, '\n')
-    print('fid_node\n', fid_node, '\n')
-    print('ndxy\n', ndxy, '\n')
-    print('tmp\n', tmp, '\n')
-    print('dxy\n', norm(dxy, axis=1), '\n')
-
+    #
+    # print('active\n', active, '\n')
+    # print('fid_node\n', fid_node, '\n')
+    # print('ndxy\n', ndxy, '\n')
+    # print('tmp\n', tmp, '\n')
+    # print('dxy\n', norm(dxy, axis=1), '\n')
+    #
     res = self._do_steps(active, ndxy)
 
     return res

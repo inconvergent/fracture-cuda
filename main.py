@@ -48,8 +48,12 @@ def show(render, f):
       render.circle(x, y, ONE, fill=True)
     render.circle(x, y, FRAC_DST, fill=False)
   # print(f.active[:f.anum])
-  # for frac in f.get_fractures_inds():
-  #   print(frac)
+
+
+  print('show fracs')
+  for frac in f.get_fractures_inds():
+    print(frac)
+
   # print(f.active[:f.anum])
   # for frac in f.get_fractures():
   #   print(frac)
@@ -83,19 +87,21 @@ def main():
       nmax=NMAX
       )
 
-  for _ in range(10):
+  for _ in range(3):
     F.blow(1, EDGE+random(2)*(1.0-2.0*EDGE))
 
   def wrap(render):
+
+    print('####################################################')
+
+    print(F.num, F.fnum, F.anum)
+    res = F.step()
 
     if not F.itt % 1:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)
 
-    res = F.step()
-
-    print(F.num, F.fnum, F.anum)
     # n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
     # print('spawned: {:d}'.format(n))
     return True
