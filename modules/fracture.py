@@ -6,14 +6,18 @@ from numpy import zeros
 from numpy import ones
 from numpy import sin
 from numpy import cos
+from numpy import arctan2
 from numpy import arange
 from numpy import column_stack
 from numpy import row_stack
-from numpy.linalg import norm
 from numpy.random import random
+from numpy.random import randint
+
 
 from numpy import float32 as npfloat
 from numpy import int32 as npint
+
+import pycuda.driver as drv
 
 TWOPI = PI*2
 HPI = PI*0.5
@@ -80,6 +84,7 @@ class Fracture(object):
     self.spd = ones((nmax, 1), npfloat)
     self.dxy = ones((nmax, 2), npfloat)
     self.ndxy = ones((nmax, 2), npfloat)
+    self.cand_ndxy = ones((nmax, 2), npfloat)
 
     self.tmp = ones((nmax, 2), npfloat)
 
@@ -155,10 +160,96 @@ class Fracture(object):
     self.anum += n
     self.fnum += n
 
+  def spawn_front(self, factor, angle):
+    inds = (random(self.anum)<factor).nonzero()[0]
+    n = len(inds)
+    if n<1:
+      return 0
+
+    cand_ii = self.fid_node[self.active[inds, 0], 1]
+
+    num = self.num
+    fnum = self.fnum
+
+    xy = self.xy[:num, :]
+    new = arange(fnum, fnum+n)
+    orig_dxy = self.dxy[cand_ii, :]
+    rndtheta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
+    theta = arctan2(orig_dxy[:, 1], orig_dxy[:, 0]) + rndtheta
+
+    fid_node = column_stack((
+        new,
+        cand_ii
+        ))
+    cand_dxy = column_stack((
+        cos(theta),
+        sin(theta)
+        ))
+    nactive = arange(n)
+
+    ndxy = self.cand_ndxy[:n, :]
+
+    self.cuda_step(
+        npint(self.nz),
+        npint(self.zone_leap),
+        npint(num),
+        npint(n),
+        npint(n),
+        npfloat(self.frac_dot),
+        npfloat(self.frac_dst),
+        npfloat(self.frac_stp),
+        drv.In(fid_node),
+        drv.In(nactive),
+        drv.Out(self.tmp[:n, :]),
+        drv.In(xy),
+
+        drv.In(cand_dxy),
+        drv.Out(ndxy),
+
+        drv.In(self.zone_num),
+        drv.In(self.zone_node),
+        block=(self.threads,1,1),
+        grid=(int(n//self.threads + 1), 1) # this cant be a numpy int for some reason
+        )
+
+    mask = ndxy[:, 0] >= -1.0
+    n = mask.sum()
+
+    if n<1:
+      return False
+
+    print('new', n, self.anum)
+    self._add_fracs(ndxy[mask, :], cand_ii[mask])
+    return True
+
+  def _add_fracs(self, ndxy, nodes):
+    fnum = self.fnum
+    n = len(ndxy)
+    new = arange(fnum, fnum+n)
+
+    fid_node = column_stack((
+        new,
+        nodes
+        ))
+
+    self.dxy[new, :] = ndxy
+    self.spd[new, :] = self.frac_spd
+    self.fid_node[new, :] = fid_node
+
+    self.active[self.anum:self.anum+n, 0] = new
+
+    # print()
+    # print('nactive\n', nactive, '\n')
+    # print('fid_node\n', fid_node, '\n')
+    # print('ndxy\n', ndxy, '\n')
+
+    self.anum += n
+    self.fnum += n
+    return n
+
   def _do_steps(self, active, ndxy):
     num = self.num
     fnum = self.fnum
-    # anum = self.anum
 
     mask = ndxy[:, 0] >= -1.0
     n = mask.sum()
@@ -182,8 +273,6 @@ class Fracture(object):
     self.fid_node[new, :] = fid_node
     self.visited[num:num+n] = 1
 
-    #TODO
-    # self.active[mask.nonzero()[0], 0] = new
     self.active[:n, 0] = new
 
     self.num += n
@@ -193,7 +282,6 @@ class Fracture(object):
     return True
 
   def step(self):
-    import pycuda.driver as drv
 
     self.itt += 1
 
@@ -243,13 +331,12 @@ class Fracture(object):
         block=(self.threads,1,1),
         grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
-    #
+
     # print('active\n', active, '\n')
     # print('fid_node\n', fid_node, '\n')
     # print('ndxy\n', ndxy, '\n')
     # print('tmp\n', tmp, '\n')
-    # print('dxy\n', norm(dxy, axis=1), '\n')
-    #
+
     res = self._do_steps(active, ndxy)
 
     return res
