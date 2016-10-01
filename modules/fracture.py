@@ -223,7 +223,6 @@ class Fracture(object):
         )
 
     ndxy[:,:] = -10
-
     self.cuda_step(
         npint(self.nz),
         npint(self.zone_leap),

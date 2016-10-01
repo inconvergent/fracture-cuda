@@ -85,7 +85,7 @@ def main():
     F.blow(5, EDGE+random(2)*(1.0-2.0*EDGE))
 
   def wrap(render):
-    print(F.num, F.fnum, F.anum, '########################################')
+    print('num', F.num, 'fnum', F.fnum, 'anum', F.anum, '########################################')
     res = F.step()
 
     if not F.itt % 1:
