@@ -109,6 +109,63 @@ class Fracture(object):
           }
         )
 
+  def _add_nodes(self, xy):
+    num = self.num
+    n, _ = xy.shape
+    inds = arange(num, num+n)
+    self.xy[inds, :] = xy
+    self.num += len(xy)
+    return inds
+
+  def _add_fracs(self, dxy, nodes, fids=None, replace_active=False):
+    fnum = self.fnum
+    n, _ = dxy.shape
+
+    new_fracs = arange(fnum, fnum+n)
+
+    if len(nodes)==1 and n>1:
+      nodes = ones(n, 'int')
+      nodes[:] = nodes[0]
+
+    if fids is None:
+      fids = new_fracs
+
+    fid_node = column_stack((
+        fids,
+        nodes
+        ))
+
+    self.dxy[new_fracs, :] = dxy
+    self.spd[new_fracs, :] = self.frac_spd
+    self.fid_node[new_fracs, :] = fid_node
+
+    if not replace_active:
+      self.active[self.anum:self.anum+n, 0] = new_fracs
+      self.anum += n
+    else:
+      self.active[:n, 0] = new_fracs
+      self.anum = n
+
+    self.fnum += n
+    return new_fracs
+
+  def _do_steps(self, active, ndxy):
+    mask = ndxy[:, 0] >= -1.0
+    n = mask.sum()
+    if n<1:
+      return False
+
+    ndxy = ndxy[mask, :]
+    active = active[mask, 0]
+
+    new_xy = self.xy[self.fid_node[active, 1].squeeze(), :] + \
+        ndxy*self.frac_stp
+    new_nodes = self._add_nodes(new_xy)
+
+    self._add_fracs(ndxy, new_nodes, self.fid_node[active, 0], replace_active=True)
+
+    return True
+
   def get_nodes(self):
     return self.xy[:self.num, :]
 
@@ -135,30 +192,8 @@ class Fracture(object):
         sin(a)
         ))
 
-    num = self.num
-    fnum = self.fnum
-    anum = self.anum
-
-    self.xy[num, :] = xy
-
-    self.dxy[fnum:fnum+n, :] = dxy
-    self.spd[fnum:fnum+n, :] = self.frac_spd
-
-    new = arange(fnum, fnum+n)
-
-    fid_node = column_stack((
-        new,
-        ones(n, npint)*num
-        ))
-
-    self.fid_node[new, :] = fid_node
-    self.visited[num] = 1
-
-    self.active[anum:anum+n, 0] = new[:]
-
-    self.num += 1
-    self.anum += n
-    self.fnum += n
+    new_nodes = self._add_nodes(xy)
+    self._add_fracs(dxy, new_nodes)
 
   def spawn_front(self, factor, angle):
     inds = (random(self.anum)<factor).nonzero()[0]
@@ -222,67 +257,7 @@ class Fracture(object):
     self._add_fracs(ndxy[mask, :], cand_ii[mask])
     return True
 
-  def _add_fracs(self, ndxy, nodes):
-    fnum = self.fnum
-    n = len(ndxy)
-    new = arange(fnum, fnum+n)
-
-    fid_node = column_stack((
-        new,
-        nodes
-        ))
-
-    self.dxy[new, :] = ndxy
-    self.spd[new, :] = self.frac_spd
-    self.fid_node[new, :] = fid_node
-
-    self.active[self.anum:self.anum+n, 0] = new
-
-    # print()
-    # print('nactive\n', nactive, '\n')
-    # print('fid_node\n', fid_node, '\n')
-    # print('ndxy\n', ndxy, '\n')
-
-    self.anum += n
-    self.fnum += n
-    return n
-
-  def _do_steps(self, active, ndxy):
-    num = self.num
-    fnum = self.fnum
-
-    mask = ndxy[:, 0] >= -1.0
-    n = mask.sum()
-    if n<1:
-      return False
-
-    ndxy = ndxy[mask, :]
-    active = active[mask, 0]
-
-    new = arange(fnum, fnum+n)
-    self.dxy[new, :] = ndxy
-    self.xy[num:num+n, :] = self.xy[self.fid_node[active, 1].squeeze(), :] + \
-        ndxy*self.frac_stp
-    self.spd[new, :] = self.frac_spd
-
-    fid_node = column_stack((
-        self.fid_node[active, 0],
-        arange(num, num+n)
-        ))
-
-    self.fid_node[new, :] = fid_node
-    self.visited[num:num+n] = 1
-
-    self.active[:n, 0] = new
-
-    self.num += n
-    self.anum = n
-    self.fnum += n
-
-    return True
-
   def step(self):
-
     self.itt += 1
 
     num = self.num

@@ -5,7 +5,7 @@
 BACK = [1, 1, 1, 1]
 FRONT = [0, 0, 0, 0.2]
 LIGHT = [0, 0, 0, 0.2]
-CYAN = [0, 0.5, 0.5, 0.7]
+CYAN = [0, 0.5, 0.5, 0.4]
 BLUE = [0, 0, 1, 0.3]
 
 NMAX = 10**6
@@ -82,7 +82,7 @@ def main():
       )
 
   for _ in range(1):
-    F.blow(1, EDGE+random(2)*(1.0-2.0*EDGE))
+    F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):
     print('num', F.num, 'fnum', F.fnum, 'anum', F.anum, '########################################')
