@@ -78,6 +78,7 @@ __global__ void calc_stp(
     const float frac_dot,
     const float frac_dst,
     const float frac_stp,
+    const int *visited,
     const int *fid_node,
     const int *active,
     float *tmp,

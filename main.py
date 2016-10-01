@@ -87,7 +87,7 @@ def main():
     print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
     res = F.step()
 
-    if not F.itt % 1:
+    if not F.itt % 10:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)

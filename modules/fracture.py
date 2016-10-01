@@ -100,7 +100,7 @@ class Fracture(object):
         'agg',
         subs={'_THREADS_': self.threads}
         )
-    self.cuda_step = load_kernel(
+    self.cuda_calc_stp = load_kernel(
         'modules/cuda/calc_stp.cu',
         'calc_stp',
         subs={
@@ -212,6 +212,7 @@ class Fracture(object):
     fnum = self.fnum
 
     xy = self.xy[:num, :]
+    visited = self.visited[:num, 0]
     new = arange(fnum, fnum+n)
     orig_dxy = self.dxy[cand_ii, :]
     rndtheta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
@@ -229,7 +230,7 @@ class Fracture(object):
 
     ndxy = self.cand_ndxy[:n, :]
 
-    self.cuda_step(
+    self.cuda_calc_stp(
         npint(self.nz),
         npint(self.zone_leap),
         npint(num),
@@ -238,6 +239,7 @@ class Fracture(object):
         npfloat(self.frac_dot),
         npfloat(self.frac_dst),
         npfloat(self.frac_stp),
+        drv.In(visited),
         drv.In(fid_node),
         drv.In(nactive),
         drv.Out(self.tmp[:n, :]),
@@ -270,6 +272,7 @@ class Fracture(object):
     anum = self.anum
 
     xy = self.xy[:num, :]
+    visited = self.visited[:num, 0]
     active = self.active[:anum]
     fid_node = self.fid_node[:fnum]
     dxy = self.dxy[:fnum, :]
@@ -278,20 +281,19 @@ class Fracture(object):
     tmp = self.tmp[:anum, :]
 
     self.zone_num[:] = 0
-
     self.cuda_agg(
         npint(self.nz),
         npint(self.zone_leap),
         npint(num),
         drv.In(xy),
         drv.InOut(self.zone_num),
-        drv.InOut(self.zone_node),
+        drv.Out(self.zone_node),
         block=(self.threads,1,1),
         grid=(int(num//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
     ndxy[:,:] = -10
-    self.cuda_step(
+    self.cuda_calc_stp(
         npint(self.nz),
         npint(self.zone_leap),
         npint(num),
@@ -300,6 +302,7 @@ class Fracture(object):
         npfloat(self.frac_dot),
         npfloat(self.frac_dst),
         npfloat(self.frac_stp),
+        drv.In(visited),
         drv.In(fid_node),
         drv.In(active),
         drv.Out(tmp),
