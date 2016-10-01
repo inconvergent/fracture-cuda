@@ -14,7 +14,7 @@ ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
 FRAC_DOT = 0.73
-FRAC_DST = 0.1
+FRAC_DST = 0.05
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
@@ -25,10 +25,10 @@ SPAWN_ANGLE = 2.0
 SPAWN_FACTOR = 0.2
 
 THREADS = 512
-ZONE_LEAP = 512
+ZONE_LEAP = 1024
 
 EDGE = 0.1
-SOURCES = 10000
+SOURCES = 20000
 
 
 
@@ -45,8 +45,8 @@ def show(render, f):
   render.set_front(CYAN)
   for frac in fractures:
     for x, y in frac:
-      render.circle(x, y, 2*ONE, fill=True)
-
+      render.circle(x, y, ONE, fill=True)
+    render.circle(x, y, FRAC_DST, fill=False)
   # print(f.active[:f.anum])
   # for frac in f.get_fractures_inds():
   #   print(frac)
@@ -68,9 +68,8 @@ def main():
       SOURCES,
       0.5, 0.5,
       1.0-2.0*EDGE, 1.0-2.0*EDGE,
-      ONE
+      ONE*1.5
       )
-  print(initial_sources)
 
   F = Fracture(
       FRAC_DOT,
@@ -84,7 +83,7 @@ def main():
       nmax=NMAX
       )
 
-  for _ in range(1):
+  for _ in range(10):
     F.blow(1, EDGE+random(2)*(1.0-2.0*EDGE))
 
   def wrap(render):

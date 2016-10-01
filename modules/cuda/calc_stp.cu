@@ -12,7 +12,10 @@ __device__ int get_fow_items(
     const int *zone_num,
     const int *zone_node,
     const int zone_leap,
+    const int aa,
     const int ii,
+    const int ff,
+    float *tmp,
     const float *xy,
     const float *dxy,
     const float fow_dot,
@@ -23,11 +26,18 @@ __device__ int get_fow_items(
   int jj;
   float dd;
   float dt;
-  float fdx;
-  float fdy;
+  float jdx;
+  float jdy;
   float nrm;
 
+  float x = xy[ff];
+  float y = xy[ff+1];
+  float fdx = dxy[aa];
+  float fdy = dxy[aa+1];
+
   int count = 0;
+  /*tmp[ii] = fdx;*/
+  /*tmp[ii+1] = fdy;*/
 
   for (int a=max(zi-1,0);a<min(zi+2,nz);a++){
     for (int b=max(zj-1,0);b<min(zj+2,nz);b++){
@@ -35,24 +45,29 @@ __device__ int get_fow_items(
       for (int k=0;k<zone_num[zk];k++){
         jj = 2*zone_node[zk*zone_leap+k];
 
-        if (jj == ii){
+        if (jj == ff){
           continue;
         }
 
-        fdx = xy[jj]-xy[ii];
-        fdy = xy[jj+1]-xy[ii+1];
-        nrm = sqrt(fdx*fdx+fdy*fdy);
+        jdx = xy[jj]-x;
+        jdy = xy[jj+1]-y;
+        nrm = sqrt(jdx*jdx+jdy*jdy);
 
-        dt = (dxy[jj]*fdx + dxy[jj+1]*fdy)/nrm;
-        dd = dist(xy, xy, jj, ii);
+        dt = (fdx*jdx + fdy*jdy)/nrm;
+        dd = dist(xy, xy, jj, ff);
 
-        if (dd<fow_dst && dt>fow_dot){
+        if (dd>0.0f && dd<fow_dst && dt>fow_dot){
           proximity[count] = jj/2;
           count += 1;
+          tmp[ii] = dd;
+          tmp[ii+1] = (float)count;
+        }
+        else{
         }
       }
     }
   }
+
 
   return count;
 }
@@ -68,6 +83,7 @@ __global__ void calc_stp(
     const float frac_stp,
     const int *fid_node,
     const int *active,
+    float *tmp,
     const float *xy,
     const float *dxy,
     float *ndxy,
@@ -84,8 +100,11 @@ __global__ void calc_stp(
   const int zi = (int) floor(xy[ii]*nz);
   const int zj = (int) floor(xy[ii+1]*nz);
 
-  const int ff = 2*fid_node[2*active[i]+1];
-  /*int ii = 2*fid_node[ff+1];*/
+  const int aa = 2*active[i];
+  const int ff = 2*fid_node[aa+1];
+
+  tmp[ii] = 21.0f;
+  tmp[ii+1] = 22.0f;
 
   int proximity[PROX];
   int fow_count = get_fow_items(
@@ -95,7 +114,10 @@ __global__ void calc_stp(
       zone_num,
       zone_node,
       zone_leap,
+      aa,
+      ii,
       ff,
+      tmp,
       xy,
       dxy,
       frac_dot,
@@ -125,30 +147,11 @@ __global__ void calc_stp(
   my /= (float)fow_count;
   mx -= xy[ii];
   my -= xy[ii+1];
-  nrm = sqrt(mx*mx+my*my);
+  nrm = sqrt(mx*mx + my*my);
   mx /= nrm;
   my /= nrm;
 
   ndxy[ii] = mx;
   ndxy[ii+1] = my;
-
-  /*  dd = sqrt(powf(dx, 2.0f) + powf(dy, 2.0f));*/
-  /**/
-  /*  if (dd<=0.0f){*/
-  /*    continue;*/
-  /*  }*/
-  /**/
-  /*  rel_neigh = true;*/
-  /*  for (int l=0;l<cand_count;l++){*/
-  /*    aa = 2*proximity[l];*/
-  /*    if (dd>link_ignore_rad){*/
-  /*      linked = false;*/
-  /*      break;*/
-  /*    }*/
-  /*    if (dd>max(dist(xy, xy, aa, ii), dist(xy, xy, jj, aa))){*/
-  /*      linked = false;*/
-  /*      break;*/
-  /*    }*/
-  /*  }*/
 }
 

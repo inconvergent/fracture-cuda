@@ -9,6 +9,7 @@ from numpy import cos
 from numpy import arange
 from numpy import column_stack
 from numpy import row_stack
+from numpy.linalg import norm
 from numpy.random import random
 
 from numpy import float32 as npfloat
@@ -29,7 +30,7 @@ class Fracture(object):
       frac_diminish=1.0,
       frac_spawn_diminish=1.0,
       threads = 256,
-      zone_leap = 200,
+      zone_leap = 1024,
       nmax = 100000
       ):
     self.itt = 0
@@ -60,6 +61,7 @@ class Fracture(object):
 
     nz = int(0.5/self.frac_dst)
     self.nz = nz
+    print('nz', nz)
     self.nz2 = nz**2
     nmax = self.nmax
 
@@ -78,6 +80,8 @@ class Fracture(object):
     self.spd = ones((nmax, 1), npfloat)
     self.dxy = ones((nmax, 2), npfloat)
     self.ndxy = ones((nmax, 2), npfloat)
+
+    self.tmp = ones((nmax, 2), npfloat)
 
     self.zone_num = zeros(self.nz2, npint)
     self.zone_node = zeros(self.nz2*self.zone_leap, npint)
@@ -162,16 +166,16 @@ class Fracture(object):
       return False
 
     ndxy = ndxy[mask, :]
+    active = active[mask, 0]
 
     new = arange(fnum, fnum+n)
     self.dxy[new, :] = ndxy
-    self.xy[num:num+n, :] = self.xy[self.fid_node[active[mask, 0], 1].squeeze(), :] + \
+    self.xy[num:num+n, :] = self.xy[self.fid_node[active, 1].squeeze(), :] + \
         ndxy*self.frac_stp
     self.spd[new, :] = self.frac_spd
 
     fid_node = column_stack((
-        self.fid_node[active[mask], 0],
-        # new[:]
+        self.fid_node[active, 0],
         arange(num, num+n)
         ))
     self.fid_node[new, :] = fid_node
@@ -202,6 +206,8 @@ class Fracture(object):
     dxy = self.dxy[:fnum, :]
     ndxy = self.ndxy[:anum, :]
 
+    tmp = self.tmp[:anum, :]
+
     self.zone_num[:] = 0
 
     self.cuda_agg(
@@ -214,6 +220,9 @@ class Fracture(object):
         block=(self.threads,1,1),
         grid=(num//self.threads + 1, 1)
         )
+
+    # print(self.zone_num)
+    # print(self.zone_num.max())
 
     ndxy[:,:] = -10
 
@@ -228,6 +237,7 @@ class Fracture(object):
         npfloat(self.frac_stp),
         drv.In(fid_node),
         drv.In(active),
+        drv.Out(tmp),
         drv.In(xy),
         drv.In(dxy),
         drv.Out(ndxy),
@@ -240,6 +250,9 @@ class Fracture(object):
     print('active\n', active, '\n')
     print('fid_node\n', fid_node, '\n')
     print('ndxy\n', ndxy, '\n')
+    print('tmp\n', tmp, '\n')
+    print('dxy\n', norm(dxy, axis=1), '\n')
+
     res = self._do_steps(active, ndxy)
 
     return res
