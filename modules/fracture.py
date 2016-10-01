@@ -138,6 +138,7 @@ class Fracture(object):
     self.dxy[new_fracs, :] = dxy
     self.spd[new_fracs, :] = self.frac_spd
     self.fid_node[new_fracs, :] = fid_node
+    self.visited[new_fracs, 0] = 1
 
     if not replace_active:
       self.active[self.anum:self.anum+n, 0] = new_fracs
@@ -157,12 +158,16 @@ class Fracture(object):
 
     ndxy = ndxy[mask, :]
     active = active[mask, 0]
-
-    new_xy = self.xy[self.fid_node[active, 1].squeeze(), :] + \
-        ndxy*self.frac_stp
+    ii = self.fid_node[active, 1].squeeze()
+    new_xy = self.xy[ii, :] + ndxy*self.frac_stp
     new_nodes = self._add_nodes(new_xy)
 
-    self._add_fracs(ndxy, new_nodes, self.fid_node[active, 0], replace_active=True)
+    self._add_fracs(
+        ndxy,
+        new_nodes,
+        self.fid_node[active, 0],
+        replace_active=True
+        )
 
     return True
 

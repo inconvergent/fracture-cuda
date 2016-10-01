@@ -31,7 +31,6 @@ EDGE = 0.1
 SOURCES = 20000
 
 
-
 def show(render, f):
   render.clear_canvas()
 
@@ -59,8 +58,8 @@ def main():
   from numpy.random import random
   from iutils.random import darts_rect
 
-  from fn import Fn
-  fn = Fn(prefix='./res/')
+  # from fn import Fn
+  # fn = Fn(prefix='./res/')
 
   initial_sources = darts_rect(
       SOURCES,
@@ -85,7 +84,7 @@ def main():
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):
-    print('num', F.num, 'fnum', F.fnum, 'anum', F.anum, '########################################')
+    print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
     res = F.step()
 
     if not F.itt % 1:
