@@ -7,14 +7,14 @@ __device__ float dist(const float *a, const float *b, const int ii, const int jj
 
 __device__ int get_fow_items(
     const int nz,
-    const int zi,
-    const int zj,
+    const int zx,
+    const int zy,
     const int *zone_num,
     const int *zone_node,
     const int zone_leap,
     const int aa,
-    const int ii,
     const int ff,
+    const int ii,
     float *tmp,
     const float *xy,
     const float *dxy,
@@ -30,22 +30,22 @@ __device__ int get_fow_items(
   float jdy;
   float nrm;
 
-  float x = xy[ff];
-  float y = xy[ff+1];
-  float fdx = dxy[aa];
-  float fdy = dxy[aa+1];
+  float x = xy[ii];
+  float y = xy[ii+1];
+  float fdx = dxy[ff];
+  float fdy = dxy[ff+1];
 
   int count = 0;
   /*tmp[ii] = fdx;*/
   /*tmp[ii+1] = fdy;*/
 
-  for (int a=max(zi-1,0);a<min(zi+2,nz);a++){
-    for (int b=max(zj-1,0);b<min(zj+2,nz);b++){
+  for (int a=max(zx-1,0);a<min(zx+2,nz);a++){
+    for (int b=max(zy-1,0);b<min(zy+2,nz);b++){
       zk = a*nz+b;
       for (int k=0;k<zone_num[zk];k++){
         jj = 2*zone_node[zk*zone_leap+k];
 
-        if (jj == ff){
+        if (jj == ii){
           continue;
         }
 
@@ -54,7 +54,7 @@ __device__ int get_fow_items(
         nrm = sqrt(jdx*jdx+jdy*jdy);
 
         dt = (fdx*jdx + fdy*jdy)/nrm;
-        dd = dist(xy, xy, jj, ff);
+        dd = dist(xy, xy, jj, ii);
 
         if (dd>0.0f && dd<fow_dst && dt>fow_dot){
           proximity[count] = jj/2;
@@ -90,33 +90,34 @@ __global__ void calc_stp(
     const int *zone_num,
     const int *zone_node
     ){
-  const int i = blockIdx.x*THREADS + threadIdx.x;
+  const int a = blockIdx.x*THREADS + threadIdx.x;
 
-  if (i>=anum){
+  if (a>=anum){
     return;
   }
 
-  const int ii = 2*i;
-  const int zi = (int) floor(xy[ii]*nz);
-  const int zj = (int) floor(xy[ii+1]*nz);
+  const int aa = 2*a;
 
-  const int aa = 2*active[i];
-  const int ff = 2*fid_node[aa+1];
+  const int ff = 2*active[a];
+  const int ii = 2*fid_node[ff+1];
 
-  tmp[ii] = 21.0f;
-  tmp[ii+1] = 22.0f;
+  const int zx = (int) floor(xy[ii]*nz);
+  const int zy = (int) floor(xy[ii+1]*nz);
+
+  tmp[aa] = 21.0f;
+  tmp[aa+1] = 22.0f;
 
   int proximity[PROX];
   int fow_count = get_fow_items(
       nz,
-      zi,
-      zj,
+      zx,
+      zy,
       zone_num,
       zone_node,
       zone_leap,
       aa,
-      ii,
       ff,
+      ii,
       tmp,
       xy,
       dxy,
@@ -126,8 +127,8 @@ __global__ void calc_stp(
       );
 
   if (fow_count<1){
-    ndxy[ii] = -100.0f;
-    ndxy[ii+1] = -100.0f;
+    ndxy[aa] = -100.0f;
+    ndxy[aa+1] = -100.0f;
     return;
   }
 
@@ -136,7 +137,6 @@ __global__ void calc_stp(
   float nrm;
 
   int jj;
-
   for (int k=0;k<fow_count;k++){
     jj = 2*proximity[k];
     mx += xy[jj];
@@ -151,7 +151,7 @@ __global__ void calc_stp(
   mx /= nrm;
   my /= nrm;
 
-  ndxy[ii] = mx;
-  ndxy[ii+1] = my;
+  ndxy[aa] = mx;
+  ndxy[aa+1] = my;
 }
 
