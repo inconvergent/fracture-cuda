@@ -195,7 +195,11 @@ class Fracture(object):
         block=(self.threads,1,1),
         grid=(int(self.num//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
-    # print(self.zone_num.max())
+
+    if not self.itt%100:
+      m = self.zone_num.max()
+      assert self.zone_leap-100 > m, 'bad zone leap size'
+      print('zone leap ok {:d}>{:d}'.format(self.zone_leap, m))
 
   def get_nodes(self):
     return self.xy[:self.num, :]
