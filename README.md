@@ -1,6 +1,6 @@
 # Fracture CUDA
 
-A generative algorithm.
+CUDA implementation of https://github.com/inconvergent/fracture
 
 
 ![ani](/img/ani.gif?raw=true "ani")
@@ -21,8 +21,4 @@ The code also depends on:
 *    `numpy`
 *    `python-cairo` (do not install with pip, this generally does not work)
 *    `pycuda`
-
-
-note to self: if cuda is not working try `sudo ldconfig`. and check
-$LD_LIBRARY_PATH
 
