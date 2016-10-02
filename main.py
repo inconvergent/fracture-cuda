@@ -13,8 +13,8 @@ SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-FRAC_DOT = 0.99
-FRAC_DST = 0.05
+FRAC_DOT = 0.98
+FRAC_DST = 0.03
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
@@ -25,10 +25,10 @@ SPAWN_ANGLE = 0.0
 SPAWN_FACTOR = 0.06
 
 THREADS = 512
-ZONE_LEAP = 1024*2
+ZONE_LEAP = 1024*10
 
 EDGE = 0.1
-SOURCES = 20000
+SOURCES = 30000
 
 DRAW_ITT = 20
 
@@ -82,7 +82,7 @@ def main():
       nmax=NMAX
       )
 
-  for _ in range(1):
+  for _ in range(5):
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):

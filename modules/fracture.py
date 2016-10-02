@@ -195,6 +195,7 @@ class Fracture(object):
         block=(self.threads,1,1),
         grid=(int(self.num//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
+    # print(self.zone_num.max())
 
   def get_nodes(self):
     return self.xy[:self.num, :]
