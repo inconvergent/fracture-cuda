@@ -11,9 +11,9 @@ BLUE = [0, 0, 1, 0.3]
 NMAX = 10**6
 SIZE = 1000
 ONE = 1./SIZE
-LINEWIDTH = ONE*1.1
+LINEWIDTH = ONE*1.5
 
-FRAC_DOT = 0.98
+FRAC_DOT = 0.95
 FRAC_DST = 0.03
 FRAC_STP = ONE
 FRAC_SPD = 1.0
@@ -22,7 +22,7 @@ FRAC_DIMINISH = 0.997
 FRAC_SPAWN_DIMINISH = 0.9
 
 SPAWN_ANGLE = 0.0
-SPAWN_FACTOR = 0.06
+SPAWN_FACTOR = 0.04
 
 THREADS = 512
 ZONE_LEAP = 1024*10
@@ -46,7 +46,6 @@ def show(render, f):
   render.set_front(FRONT)
   fractures = f.get_fractures()
 
-  render.set_line_width(ONE)
   for frac in fractures:
     render.path(frac)
 
@@ -101,7 +100,7 @@ def main():
     return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
-  render.set_line_width(ONE)
+  render.set_line_width(LINEWIDTH)
   render.start()
 
 
