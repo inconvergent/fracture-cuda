@@ -73,12 +73,8 @@ class Fracture(object):
     self.xy = zeros((nmax, 2), npfloat)
     self.xy[:num,:] = initial_sources[:,:]
 
-
     self.fid_node = zeros((nmax, 2), npint)
     self.fid_node[:,:] = -1
-
-    # self.intersection = zeros((nmax, 1), npint)
-    # self.intersection[:, 0] = -1
 
     self.visited = zeros((nmax, 1), npint)
     self.visited[:, 0] = 1
@@ -248,9 +244,7 @@ class Fracture(object):
     new = arange(fnum, fnum+n)
     orig_dxy = self.dxy[cand_aa, :]
 
-    diff_theta = (-1)**randint(2, size=n)*HPI
-    # print(rndtheta)
-    # rndtheta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
+    diff_theta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
     theta = arctan2(orig_dxy[:, 1], orig_dxy[:, 0]) + diff_theta
 
     fid_node = column_stack((
@@ -297,7 +291,6 @@ class Fracture(object):
       return 0
 
     nodes = cand_ii[mask]
-    # self._add_fracs(ndxy[mask, :], nodes)
     self._add_fracs(cand_dxy[mask, :], nodes)
 
     if dbg:

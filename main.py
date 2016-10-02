@@ -25,35 +25,29 @@ SPAWN_ANGLE = 0.0
 SPAWN_FACTOR = 0.06
 
 THREADS = 512
-ZONE_LEAP = 1024*10
+ZONE_LEAP = 1024*2
 
 EDGE = 0.1
 SOURCES = 20000
 
 DRAW_ITT = 1
 
-DBG = True
+DBG = False
 
 
 def show(render, f):
   render.clear_canvas()
 
-  nodes = f.get_nodes()
-  fractures = f.get_fractures()
-
-  render.set_front(FRONT)
-  for x, y in nodes:
-    render.circle(x, y, ONE, fill=False)
+  # nodes = f.get_nodes()
+  # render.set_front(FRONT)
+  # for x, y in nodes:
+  #   render.circle(x, y, ONE, fill=False)
 
   render.set_front(CYAN)
+  fractures = f.get_fractures()
   for frac in fractures:
     for x, y in frac:
       render.circle(x, y, 0.5*FRAC_STP, fill=True)
-    # render.circle(x, y, FRAC_DST, fill=False)
-
-  # print('show fracs')
-  # for frac in f.get_fractures_inds():
-  #   print(frac)
 
 
 def main():
@@ -94,7 +88,6 @@ def main():
     n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE, dbg=DBG)
     if n > 0:
       print('new fracs: {:d}'.format(n))
-      F.print_debug(F.num, F.fnum, F.anum)
 
     if not F.itt % DRAW_ITT:
       show(render, F)
