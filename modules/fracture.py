@@ -76,8 +76,10 @@ class Fracture(object):
     self.fid_node = zeros((nmax, 2), npint)
     self.fid_node[:,:] = -1
 
-    self.visited = zeros((nmax, 1), npint)
+    # self.intersection = zeros((nmax, 1), npint)
+    # self.intersection[:, 0] = -1
 
+    self.visited = zeros((nmax, 1), npint)
     self.visited[:, 0] = 1
     self.visited[:num, 0] = -1
 
@@ -220,14 +222,25 @@ class Fracture(object):
 
   def frac_front(self, factor, angle):
     inds = (random(self.anum)<factor).nonzero()[0]
+
     n = len(inds)
     if n<1:
       return 0
 
-    print('FRACTURE ------------------------------')
+    print('FRACTURE ----------------------------------------------------------')
 
     cand_aa = self.active[inds, 0]
     cand_ii = self.fid_node[cand_aa, 1]
+
+    # intersection_mask = self.intersection[cand_ii, 0]<0
+    # old_n = n
+    # n = intersection_mask.sum()
+    # print('intersection', n, old_n)
+    # if n<1:
+    #   return 0
+
+    # cand_ii = cand_ii[intersection_mask]
+    # cand_aa = cand_aa[intersection_mask]
 
     num = self.num
     fnum = self.fnum
@@ -251,9 +264,9 @@ class Fracture(object):
         sin(theta)
         ))
 
-    print()
-    print(orig_dxy)
-    print(cand_dxy)
+    # print()
+    # print(orig_dxy)
+    # print(cand_dxy)
     nactive = arange(n)
 
     ndxy = self.cand_ndxy[:n, :]
@@ -282,7 +295,6 @@ class Fracture(object):
         grid=(int(n//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-
     mask = ndxy[:, 0] >= -1.0
     n = mask.sum()
 
@@ -290,7 +302,9 @@ class Fracture(object):
       return 0
 
     print('new', n, self.anum)
-    self._add_fracs(ndxy[mask, :], cand_ii[mask])
+    nodes = cand_ii[mask]
+    self._add_fracs(ndxy[mask, :], nodes)
+    # self.intersection[nodes, 0] = 1
     return n
 
   def step(self):

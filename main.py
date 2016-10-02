@@ -13,9 +13,9 @@ SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-FRAC_DOT = 0.95
+FRAC_DOT = 0.99
 FRAC_DST = 0.05
-FRAC_STP = ONE*4
+FRAC_STP = ONE
 FRAC_SPD = 1.0
 
 FRAC_DIMINISH = 0.997
@@ -89,7 +89,7 @@ def main():
     print('new fracs: {:d}'.format(n))
     res = F.step()
 
-    if not F.itt % 10:
+    if not F.itt % 100:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)
