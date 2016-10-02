@@ -15,7 +15,7 @@ LINEWIDTH = ONE*1.1
 
 FRAC_DOT = 0.99
 FRAC_DST = 0.05
-FRAC_STP = ONE
+FRAC_STP = ONE*4
 FRAC_SPD = 1.0
 
 FRAC_DIMINISH = 0.997
@@ -29,6 +29,10 @@ ZONE_LEAP = 1024*10
 
 EDGE = 0.1
 SOURCES = 20000
+
+DRAW_ITT = 1
+
+DBG = True
 
 
 def show(render, f):
@@ -85,11 +89,14 @@ def main():
 
   def wrap(render):
     print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
-    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
-    print('new fracs: {:d}'.format(n))
     res = F.step()
 
-    if not F.itt % 100:
+    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE, dbg=DBG)
+    if n > 0:
+      print('new fracs: {:d}'.format(n))
+      F.print_debug(F.num, F.fnum, F.anum)
+
+    if not F.itt % DRAW_ITT:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)

@@ -55,6 +55,7 @@ class Fracture(object):
     self.num = 0
     self.fnum = 0
     self.anum = 0
+    self.fcount = 0
 
     self.__init(initial_sources)
     self.__cuda_init()
@@ -133,7 +134,8 @@ class Fracture(object):
 
     new_fracs = arange(fnum, fnum+n)
     if fids is None:
-      fids = new_fracs
+      fids = arange(self.fcount, self.fcount+n)
+      self.fcount += 1
 
     self.dxy[new_fracs, :] = dxy
     self.spd[new_fracs, :] = self.frac_spd
@@ -167,16 +169,23 @@ class Fracture(object):
     self._add_fracs(
         ndxy,
         new_nodes,
-        self.fid_node[active, 0],
+        fids=self.fid_node[active, 0],
         replace_active=True
         )
 
-    # print('active\n', self.active[:self.anum, :], '\n')
-    # print('fid_node\n', self.fid_node[:self.fnum, :], '\n')
-    # print('ndxy\n', ndxy, '\n')
-    # print('dxy\n', self.dxy[:self.fnum, :], '\n')
-
     return True
+
+  def print_debug(self, num, fnum, anum, meta=None):
+    print('DBG itt', self.itt, 'num', num, 'fnum', fnum, 'anum', anum, '--------------')
+    print('tmp\n', self.tmp[:anum, :], '\n')
+    print('ndxy\n', self.ndxy[:anum, :], '\n')
+    print('active\n', self.active[:anum, :], '\n')
+    print('fid_node\n', self.fid_node[:fnum, :], '\n')
+    print('dxy\n', self.dxy[:fnum, :], '\n')
+    if meta:
+      print(meta, '\n')
+
+    print('DBG END ---------------------------------------------------------')
 
   def update_zone_map(self):
     self.zone_num[:] = 0
@@ -220,30 +229,19 @@ class Fracture(object):
     new_nodes = self._add_nodes(xy)
     self._add_fracs(dxy, new_nodes)
 
-  def frac_front(self, factor, angle):
+  def frac_front(self, factor, angle, dbg=False):
     inds = (random(self.anum)<factor).nonzero()[0]
 
     n = len(inds)
     if n<1:
       return 0
 
-    print('FRACTURE ----------------------------------------------------------')
-
     cand_aa = self.active[inds, 0]
     cand_ii = self.fid_node[cand_aa, 1]
 
-    # intersection_mask = self.intersection[cand_ii, 0]<0
-    # old_n = n
-    # n = intersection_mask.sum()
-    # print('intersection', n, old_n)
-    # if n<1:
-    #   return 0
-
-    # cand_ii = cand_ii[intersection_mask]
-    # cand_aa = cand_aa[intersection_mask]
-
     num = self.num
     fnum = self.fnum
+    anum = self.anum
 
     xy = self.xy[:num, :]
     visited = self.visited[:num, 0]
@@ -264,9 +262,6 @@ class Fracture(object):
         sin(theta)
         ))
 
-    # print()
-    # print(orig_dxy)
-    # print(cand_dxy)
     nactive = arange(n)
 
     ndxy = self.cand_ndxy[:n, :]
@@ -301,10 +296,12 @@ class Fracture(object):
     if n<1:
       return 0
 
-    print('new', n, self.anum)
     nodes = cand_ii[mask]
-    self._add_fracs(ndxy[mask, :], nodes)
-    # self.intersection[nodes, 0] = 1
+    # self._add_fracs(ndxy[mask, :], nodes)
+    self._add_fracs(cand_dxy[mask, :], nodes)
+
+    if dbg:
+      self.print_debug(num, fnum, anum, meta='new: {:d}'.format(n))
     return n
 
   def step(self):
@@ -324,6 +321,7 @@ class Fracture(object):
     self.update_zone_map()
 
     tmp = self.tmp[:anum, :]
+    tmp[:,:] = -1
     ndxy[:,:] = -10
     self.cuda_calc_stp(
         npint(self.nz),
@@ -337,7 +335,7 @@ class Fracture(object):
         drv.In(visited),
         drv.In(fid_node),
         drv.In(active),
-        drv.Out(tmp),
+        drv.InOut(tmp),
         drv.In(xy),
         drv.In(dxy),
         drv.Out(ndxy),
@@ -347,11 +345,6 @@ class Fracture(object):
         grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    # print('tmp\n', self.tmp[:self.anum, :], '\n')
-    # print('active\n', self.active[:self.anum, :], '\n')
-    # print('fid_node\n', self.fid_node[:self.fnum, :], '\n')
-    # print('ndxy\n', ndxy, '\n')
-    # print('dxy\n', self.dxy[:self.fnum, :], '\n')
     res = self._do_steps(active, ndxy)
 
     return res

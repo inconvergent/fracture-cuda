@@ -147,7 +147,7 @@ __device__ bool new_position_is_ok(
           pdist(px, py, x, y),
           pdist(px, py, sx, sy)
           )){
-      tmp[aa] = (float)pp*0.5f;
+      /*tmp[aa] = (float)pp*0.5f;*/
       return false;
     }
   }
@@ -257,6 +257,7 @@ __global__ void calc_stp(
   if (res){
     ndxy[aa] = stpx;
     ndxy[aa+1] = stpy;
+    tmp[aa+1] = 22.0f;
   }
   else{
     ndxy[aa] = BAD;
