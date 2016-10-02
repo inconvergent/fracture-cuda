@@ -3,7 +3,7 @@
 
 
 BACK = [1, 1, 1, 1]
-FRONT = [0, 0, 0, 0.2]
+FRONT = [0, 0, 0, 0.8]
 LIGHT = [0, 0, 0, 0.2]
 CYAN = [0, 0.5, 0.5, 0.4]
 BLUE = [0, 0, 1, 0.3]
@@ -15,7 +15,7 @@ LINEWIDTH = ONE*1.1
 
 FRAC_DOT = 0.99
 FRAC_DST = 0.05
-FRAC_STP = ONE*4
+FRAC_STP = ONE
 FRAC_SPD = 1.0
 
 FRAC_DIMINISH = 0.997
@@ -30,7 +30,7 @@ ZONE_LEAP = 1024*2
 EDGE = 0.1
 SOURCES = 20000
 
-DRAW_ITT = 1
+DRAW_ITT = 20
 
 DBG = False
 
@@ -43,11 +43,12 @@ def show(render, f):
   # for x, y in nodes:
   #   render.circle(x, y, ONE, fill=False)
 
-  render.set_front(CYAN)
+  render.set_front(FRONT)
   fractures = f.get_fractures()
+
+  render.set_line_width(ONE)
   for frac in fractures:
-    for x, y in frac:
-      render.circle(x, y, 0.5*FRAC_STP, fill=True)
+    render.path(frac)
 
 
 def main():
@@ -55,9 +56,12 @@ def main():
   from iutils.render import Animate
   from numpy.random import random
   from iutils.random import darts_rect
+  from time import time
 
-  # from fn import Fn
-  # fn = Fn(prefix='./res/')
+  start = time()
+
+  from fn import Fn
+  fn = Fn(prefix='./res/')
 
   initial_sources = darts_rect(
       SOURCES,
@@ -82,7 +86,7 @@ def main():
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):
-    print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
+    print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum, 'time', time()-start)
     res = F.step()
 
     n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE, dbg=DBG)
@@ -91,8 +95,8 @@ def main():
 
     if not F.itt % DRAW_ITT:
       show(render, F)
-      # name = fn.name()+'.png'
-      # render.write_to_png(name)
+      name = fn.name()+'.png'
+      render.write_to_png(name)
 
     return res
 

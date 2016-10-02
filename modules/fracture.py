@@ -131,7 +131,7 @@ class Fracture(object):
     new_fracs = arange(fnum, fnum+n)
     if fids is None:
       fids = arange(self.fcount, self.fcount+n)
-      self.fcount += 1
+      self.fcount += n
 
     self.dxy[new_fracs, :] = dxy
     self.spd[new_fracs, :] = self.frac_spd
