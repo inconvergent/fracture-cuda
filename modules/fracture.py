@@ -125,24 +125,20 @@ class Fracture(object):
     fnum = self.fnum
     n, _ = dxy.shape
 
-    new_fracs = arange(fnum, fnum+n)
-
     if len(nodes)==1 and n>1:
       nodes = ones(n, 'int')
       nodes[:] = nodes[0]
 
+    new_fracs = arange(fnum, fnum+n)
     if fids is None:
       fids = new_fracs
 
-    fid_node = column_stack((
+    self.dxy[new_fracs, :] = dxy
+    self.spd[new_fracs, :] = self.frac_spd
+    self.fid_node[new_fracs, :] = column_stack((
         fids,
         nodes
         ))
-
-    self.dxy[new_fracs, :] = dxy
-    self.spd[new_fracs, :] = self.frac_spd
-    self.fid_node[new_fracs, :] = fid_node
-    # self.visited[nodes, 0] = 1
 
     if not replace_active:
       self.active[self.anum:self.anum+n, 0] = new_fracs

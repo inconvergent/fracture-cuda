@@ -13,8 +13,8 @@ SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
-FRAC_DOT = 0.99
-FRAC_DST = 0.1
+FRAC_DOT = 0.95
+FRAC_DST = 0.05
 FRAC_STP = ONE*4
 FRAC_SPD = 1.0
 
@@ -22,7 +22,7 @@ FRAC_DIMINISH = 0.997
 FRAC_SPAWN_DIMINISH = 0.9
 
 SPAWN_ANGLE = 0.0
-SPAWN_FACTOR = 0.03
+SPAWN_FACTOR = 0.06
 
 THREADS = 512
 ZONE_LEAP = 1024*10
@@ -45,7 +45,7 @@ def show(render, f):
   for frac in fractures:
     for x, y in frac:
       render.circle(x, y, 0.5*FRAC_STP, fill=True)
-    render.circle(x, y, FRAC_DST, fill=False)
+    # render.circle(x, y, FRAC_DST, fill=False)
 
   # print('show fracs')
   # for frac in f.get_fractures_inds():
