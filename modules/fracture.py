@@ -72,19 +72,23 @@ class Fracture(object):
     self.xy = zeros((nmax, 2), npfloat)
     self.xy[:num,:] = initial_sources[:,:]
 
+
     self.fid_node = zeros((nmax, 2), npint)
     self.fid_node[:,:] = -1
 
     self.visited = zeros((nmax, 1), npint)
-    self.visited[:, :] = -1
+
+    self.visited[:, 0] = 1
+    self.visited[:num, 0] = -1
+
     self.active = zeros((nmax, 1), npint)
     self.active[:, :] = -1
 
     self.diminish = ones((nmax, 1), npfloat)
-    self.spd = ones((nmax, 1), npfloat)
-    self.dxy = ones((nmax, 2), npfloat)
-    self.ndxy = ones((nmax, 2), npfloat)
-    self.cand_ndxy = ones((nmax, 2), npfloat)
+    self.spd = zeros((nmax, 1), npfloat)
+    self.dxy = zeros((nmax, 2), npfloat)
+    self.ndxy = zeros((nmax, 2), npfloat)
+    self.cand_ndxy = zeros((nmax, 2), npfloat)
 
     self.tmp = ones((nmax, 2), npfloat)
 
@@ -138,7 +142,7 @@ class Fracture(object):
     self.dxy[new_fracs, :] = dxy
     self.spd[new_fracs, :] = self.frac_spd
     self.fid_node[new_fracs, :] = fid_node
-    self.visited[new_fracs, 0] = 1
+    # self.visited[nodes, 0] = 1
 
     if not replace_active:
       self.active[self.anum:self.anum+n, 0] = new_fracs
@@ -168,6 +172,11 @@ class Fracture(object):
         self.fid_node[active, 0],
         replace_active=True
         )
+
+    # print('active\n', self.active[:self.anum, :], '\n')
+    # print('fid_node\n', self.fid_node[:self.fnum, :], '\n')
+    # print('ndxy\n', ndxy, '\n')
+    # print('dxy\n', self.dxy[:self.fnum, :], '\n')
 
     return True
 
@@ -200,13 +209,16 @@ class Fracture(object):
     new_nodes = self._add_nodes(xy)
     self._add_fracs(dxy, new_nodes)
 
-  def spawn_front(self, factor, angle):
+  def frac_front(self, factor, angle):
     inds = (random(self.anum)<factor).nonzero()[0]
     n = len(inds)
     if n<1:
       return 0
 
-    cand_ii = self.fid_node[self.active[inds, 0], 1]
+    print('FRACTURE ------------------------------')
+
+    cand_aa = self.active[inds, 0]
+    cand_ii = self.fid_node[cand_aa, 1]
 
     num = self.num
     fnum = self.fnum
@@ -214,9 +226,12 @@ class Fracture(object):
     xy = self.xy[:num, :]
     visited = self.visited[:num, 0]
     new = arange(fnum, fnum+n)
-    orig_dxy = self.dxy[cand_ii, :]
-    rndtheta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
-    theta = arctan2(orig_dxy[:, 1], orig_dxy[:, 0]) + rndtheta
+    orig_dxy = self.dxy[cand_aa, :]
+
+    diff_theta = (-1)**randint(2, size=n)*HPI
+    # print(rndtheta)
+    # rndtheta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
+    theta = arctan2(orig_dxy[:, 1], orig_dxy[:, 0]) + diff_theta
 
     fid_node = column_stack((
         new,
@@ -226,6 +241,10 @@ class Fracture(object):
         cos(theta),
         sin(theta)
         ))
+
+    print()
+    print(orig_dxy)
+    print(cand_dxy)
     nactive = arange(n)
 
     ndxy = self.cand_ndxy[:n, :]
@@ -244,25 +263,24 @@ class Fracture(object):
         drv.In(nactive),
         drv.Out(self.tmp[:n, :]),
         drv.In(xy),
-
         drv.In(cand_dxy),
         drv.Out(ndxy),
-
         drv.In(self.zone_num),
         drv.In(self.zone_node),
         block=(self.threads,1,1),
         grid=(int(n//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
+
     mask = ndxy[:, 0] >= -1.0
     n = mask.sum()
 
     if n<1:
-      return False
+      return 0
 
     print('new', n, self.anum)
     self._add_fracs(ndxy[mask, :], cand_ii[mask])
-    return True
+    return n
 
   def step(self):
     self.itt += 1
@@ -315,11 +333,11 @@ class Fracture(object):
         grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    # print('active\n', active, '\n')
-    # print('fid_node\n', fid_node, '\n')
+    print('tmp\n', self.tmp[:self.anum, :], '\n')
+    # print('active\n', self.active[:self.anum, :], '\n')
+    # print('fid_node\n', self.fid_node[:self.fnum, :], '\n')
     # print('ndxy\n', ndxy, '\n')
-    # print('tmp\n', tmp, '\n')
-
+    # print('dxy\n', self.dxy[:self.fnum, :], '\n')
     res = self._do_steps(active, ndxy)
 
     return res

@@ -14,18 +14,18 @@ ONE = 1./SIZE
 LINEWIDTH = ONE*1.1
 
 FRAC_DOT = 0.99
-FRAC_DST = 0.03
-FRAC_STP = ONE
+FRAC_DST = 0.1
+FRAC_STP = ONE*4
 FRAC_SPD = 1.0
 
 FRAC_DIMINISH = 0.997
 FRAC_SPAWN_DIMINISH = 0.9
 
-SPAWN_ANGLE = 2.0
-SPAWN_FACTOR = 0.1
+SPAWN_ANGLE = 0.0
+SPAWN_FACTOR = 0.03
 
 THREADS = 512
-ZONE_LEAP = 1024
+ZONE_LEAP = 1024*10
 
 EDGE = 0.1
 SOURCES = 20000
@@ -44,8 +44,8 @@ def show(render, f):
   render.set_front(CYAN)
   for frac in fractures:
     for x, y in frac:
-      render.circle(x, y, ONE, fill=True)
-    # render.circle(x, y, FRAC_DST, fill=False)
+      render.circle(x, y, 0.5*FRAC_STP, fill=True)
+    render.circle(x, y, FRAC_DST, fill=False)
 
   # print('show fracs')
   # for frac in f.get_fractures_inds():
@@ -65,7 +65,7 @@ def main():
       SOURCES,
       0.5, 0.5,
       1.0-2.0*EDGE, 1.0-2.0*EDGE,
-      ONE*1.5
+      FRAC_STP
       )
 
   F = Fracture(
@@ -87,13 +87,13 @@ def main():
     print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
     res = F.step()
 
-    if not F.itt % 10:
+    if not F.itt % 1:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)
 
-    n = F.spawn_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
-    print('spawned: {:d}'.format(n))
+    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
+    print('new fracs: {:d}'.format(n))
     return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
