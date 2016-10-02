@@ -9,6 +9,8 @@ CUDA implementation of https://github.com/inconvergent/fracture
 
 ![ani](/img/img3.png?raw=true "ani")
 
+![ani](/img/img4.png?raw=true "ani")
+
 ## Prerequisites
 
 This code relies on Python 3.
