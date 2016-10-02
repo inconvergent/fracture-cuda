@@ -180,6 +180,19 @@ class Fracture(object):
 
     return True
 
+  def update_zone_map(self):
+    self.zone_num[:] = 0
+    self.cuda_agg(
+        npint(self.nz),
+        npint(self.zone_leap),
+        npint(self.num),
+        drv.In(self.xy[:self.num, :]),
+        drv.InOut(self.zone_num),
+        drv.Out(self.zone_node),
+        block=(self.threads,1,1),
+        grid=(int(self.num//self.threads + 1), 1) # this cant be a numpy int for some reason
+        )
+
   def get_nodes(self):
     return self.xy[:self.num, :]
 
@@ -249,6 +262,8 @@ class Fracture(object):
 
     ndxy = self.cand_ndxy[:n, :]
 
+    self.update_zone_map()
+
     self.cuda_calc_stp(
         npint(self.nz),
         npint(self.zone_leap),
@@ -296,20 +311,9 @@ class Fracture(object):
     dxy = self.dxy[:fnum, :]
     ndxy = self.ndxy[:anum, :]
 
+    self.update_zone_map()
+
     tmp = self.tmp[:anum, :]
-
-    self.zone_num[:] = 0
-    self.cuda_agg(
-        npint(self.nz),
-        npint(self.zone_leap),
-        npint(num),
-        drv.In(xy),
-        drv.InOut(self.zone_num),
-        drv.Out(self.zone_node),
-        block=(self.threads,1,1),
-        grid=(int(num//self.threads + 1), 1) # this cant be a numpy int for some reason
-        )
-
     ndxy[:,:] = -10
     self.cuda_calc_stp(
         npint(self.nz),
@@ -333,7 +337,7 @@ class Fracture(object):
         grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    print('tmp\n', self.tmp[:self.anum, :], '\n')
+    # print('tmp\n', self.tmp[:self.anum, :], '\n')
     # print('active\n', self.active[:self.anum, :], '\n')
     # print('fid_node\n', self.fid_node[:self.fnum, :], '\n')
     # print('ndxy\n', ndxy, '\n')
@@ -341,5 +345,4 @@ class Fracture(object):
     res = self._do_steps(active, ndxy)
 
     return res
-
 

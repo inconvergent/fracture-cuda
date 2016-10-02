@@ -263,6 +263,5 @@ __global__ void calc_stp(
     ndxy[aa+1] = BAD;
     tmp[aa+1] = 77.0f;
   }
-
 }
 

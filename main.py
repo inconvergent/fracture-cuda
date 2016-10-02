@@ -85,15 +85,15 @@ def main():
 
   def wrap(render):
     print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum)
+    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
+    print('new fracs: {:d}'.format(n))
     res = F.step()
 
-    if not F.itt % 1:
+    if not F.itt % 10:
       show(render, F)
       # name = fn.name()+'.png'
       # render.write_to_png(name)
 
-    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE)
-    print('new fracs: {:d}'.format(n))
     return res
 
   render = Animate(SIZE, BACK, FRONT, wrap)
