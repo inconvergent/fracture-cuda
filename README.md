@@ -3,13 +3,18 @@
 CUDA implementation of https://github.com/inconvergent/fracture
 
 
-![ani](/img/img2.png?raw=true "ani")
+![img](/img/img2.png?raw=true "img")
 
-![ani](/img/img.png?raw=true "ani")
+![img](/img/img.png?raw=true "img")
 
-![ani](/img/img3.png?raw=true "ani")
+![img](/img/img3.png?raw=true "img")
 
-![ani](/img/img4.png?raw=true "ani")
+![img](/img/img4.png?raw=true "img")
+
+![ani](/img/ani.gif?raw=true "ani")
+
+![ani](/img/ani2.gif?raw=true "ani")
+
 
 ## Prerequisites
 
