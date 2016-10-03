@@ -10,24 +10,24 @@ SIZE = 3000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.5
 
-FRAC_DOT = 0.8
-FRAC_DST = 70*ONE
+FRAC_DOT = 0.995
+FRAC_DST = 20*ONE
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
 FRAC_DIMINISH = 0.997
 FRAC_SPAWN_DIMINISH = 0.9
 
-SPAWN_ANGLE = 0.2
-SPAWN_FACTOR = 0.09
+SPAWN_ANGLE = 0.0
+SPAWN_FACTOR = 0.03
 
 THREADS = 1024
-ZONE_LEAP = 1024*10
+ZONE_LEAP = 1024*20
 
-EDGE = 0.1
-SOURCES = 10000
+EDGE = 0.05
+SOURCES = 500000
 
-DRAW_ITT = 100
+DRAW_ITT = 200
 
 DBG = False
 
@@ -86,7 +86,7 @@ def main():
       nmax=NMAX
       )
 
-  for _ in range(40):
+  for _ in range(5):
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   while True:
