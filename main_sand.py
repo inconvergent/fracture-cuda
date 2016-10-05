@@ -5,13 +5,12 @@
 BACK = [1, 1, 1, 1]
 FRONT = [0, 0, 0, 0.01]
 
-NMAX = 10**7
-SIZE = 3000
+NMAX = 10**8
+SIZE = 10000
 ONE = 1./SIZE
-LINEWIDTH = ONE*1.5
 
-FRAC_DOT = 0.995
-FRAC_DST = 20*ONE
+FRAC_DOT = 0.8
+FRAC_DST = 30*ONE
 FRAC_STP = ONE
 FRAC_SPD = 1.0
 
@@ -25,7 +24,9 @@ THREADS = 1024
 ZONE_LEAP = 1024*20
 
 EDGE = 0.05
-SOURCES = 500000
+SOURCES = 1000000
+
+INIT_FRACS = 20
 
 DRAW_ITT = 200
 
@@ -46,7 +47,7 @@ def show(sand, f):
     b = frac[:-1:, :]
     sand.paint_filled_circle_strokes(
         a, b,
-        ones(len(a), 'float')*FRAC_STP*0.9, CMULT,
+        ones(len(a), 'float')*FRAC_STP, CMULT,
         ones(len(a), 'int')*GRAINS
         )
 
@@ -86,7 +87,7 @@ def main():
       nmax=NMAX
       )
 
-  for _ in range(5):
+  for _ in range(INIT_FRACS):
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   while True:
