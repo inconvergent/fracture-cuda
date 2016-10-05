@@ -66,8 +66,10 @@ class Fracture(object):
 
     nz = int(0.5/self.frac_dst)
     self.nz = nz
-    print('nz', nz)
-    self.nz2 = nz**2
+    print('nz', nz, nz*nz)
+    print('sources', num)
+
+    self.nz2 = nz*nz
     nmax = self.nmax
 
     self.xy = zeros((nmax, 2), npfloat)
