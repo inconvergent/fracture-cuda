@@ -16,10 +16,6 @@ LINEWIDTH = ONE*1.5
 FRAC_DOT = 0.8
 FRAC_DST = 30*ONE
 FRAC_STP = ONE
-FRAC_SPD = 1.0
-
-FRAC_DIMINISH = 0.997
-FRAC_SPAWN_DIMINISH = 0.9
 
 SPAWN_ANGLE = 0.0
 SPAWN_FACTOR = 0.04
@@ -79,9 +75,6 @@ def main():
       FRAC_DST,
       FRAC_STP,
       initial_sources=initial_sources,
-      frac_spd=FRAC_SPD,
-      frac_diminish=FRAC_DIMINISH,
-      frac_spawn_diminish=FRAC_SPAWN_DIMINISH,
       zone_leap=ZONE_LEAP,
       nmax=NMAX
       )

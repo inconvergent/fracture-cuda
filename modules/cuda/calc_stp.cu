@@ -24,6 +24,8 @@ __device__ int get_fow_items(
     const int aa,
     const int ff,
     const int ii,
+    const int ignore_fracture_sources,
+    const int *visited,
     const float *xy,
     const float *dxy,
     const float fow_dot,
@@ -32,6 +34,7 @@ __device__ int get_fow_items(
     ){
   int zk;
   int jj;
+  int j;
   float dd;
   float dt;
   float jdx;
@@ -48,9 +51,17 @@ __device__ int get_fow_items(
     for (int b=max(zy-1,0);b<min(zy+2,nz);b++){
       zk = a*nz+b;
       for (int k=0;k<zone_num[zk];k++){
-        jj = 2*zone_node[zk*zone_leap+k];
+        j = zone_node[zk*zone_leap+k];
+        jj = 2*j;
 
         if (jj == ii){
+          continue;
+        }
+
+        // ignore_fracture_sources means that fractures are not attracted to
+        // other fractures. default behaviour is that fractures ARE attracted
+        // to fractures
+        if (ignore_fracture_sources>0 && visited[j]>0){
           continue;
         }
 
@@ -164,6 +175,7 @@ __global__ void calc_stp(
     const float frac_dot,
     const float frac_dst,
     const float frac_stp,
+    const int ignore_fracture_sources,
     const int *visited,
     const int *fid_node,
     const int *active,
@@ -199,6 +211,8 @@ __global__ void calc_stp(
       aa,
       ff,
       ii,
+      ignore_fracture_sources,
+      visited,
       xy,
       dxy,
       frac_dot,

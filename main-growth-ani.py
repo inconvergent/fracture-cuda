@@ -13,12 +13,12 @@ SIZE = 1000
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.5
 
-FRAC_DOT = 0.95
-FRAC_DST = 0.1
+FRAC_DOT = 0.8
+FRAC_DST = 0.03
 FRAC_STP = ONE
 
 SPAWN_ANGLE = 0.0
-SPAWN_FACTOR = 0.04
+SPAWN_FACTOR = 0.001
 
 THREADS = 512
 ZONE_LEAP = 1024*10
@@ -27,6 +27,7 @@ EDGE = 0.1
 SOURCES = 30000
 
 DRAW_ITT = 20
+IGNORE_FRACTURE_SOURCES = True
 
 DBG = False
 
@@ -69,6 +70,7 @@ def main():
       FRAC_DOT,
       FRAC_DST,
       FRAC_STP,
+      ignore_fracture_sources=IGNORE_FRACTURE_SOURCES,
       initial_sources=initial_sources,
       zone_leap=ZONE_LEAP,
       nmax=NMAX
@@ -78,10 +80,11 @@ def main():
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):
-    print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum, 'time', time()-start)
+    print('itt', F.itt, 'num', F.num, 'fnum', F.fnum, 'anum', F.anum, 'time',
+        time()-start)
     res = F.step()
 
-    n = F.frac_front(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE, dbg=DBG)
+    n = F.frac(factor=SPAWN_FACTOR, angle=SPAWN_ANGLE, dbg=DBG)
     if n > 0:
       print('new fracs: {:d}'.format(n))
 

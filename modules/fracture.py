@@ -30,9 +30,7 @@ class Fracture(object):
       frac_dst,
       frac_stp,
       initial_sources,
-      frac_spd=1.0,
-      frac_diminish=1.0,
-      frac_spawn_diminish=1.0,
+      ignore_fracture_sources=False,
       threads = 256,
       zone_leap = 1024,
       nmax = 100000
@@ -42,10 +40,10 @@ class Fracture(object):
     self.frac_dot = frac_dot
     self.frac_dst = frac_dst
     self.frac_stp = frac_stp
-    self.frac_spd = frac_spd
-
-    self.frac_diminish = frac_diminish
-    self.spawn_diminish = frac_spawn_diminish
+    # ignore_fracture_sources means that fractures are not attracted to
+    # other fractures. default behaviour is that fractures ARE attracted
+    # to fractures
+    self.ignore_fracture_sources = 1 if ignore_fracture_sources else -1
 
     self.threads = threads
     self.zone_leap = zone_leap
@@ -85,12 +83,10 @@ class Fracture(object):
     self.active = zeros((nmax, 1), npint)
     self.active[:, :] = -1
 
-    self.diminish = ones((nmax, 1), npfloat)
-    self.spd = zeros((nmax, 1), npfloat)
     self.dxy = zeros((nmax, 2), npfloat)
-    self.ndxy = zeros((nmax, 2), npfloat)
-    self.cand_ndxy = zeros((nmax, 2), npfloat)
+    self.new_dxy = zeros((nmax, 2), npfloat)
 
+    self.tmp_dxy = zeros((nmax, 2), npfloat)
     self.tmp = ones((nmax, 2), npfloat)
 
     self.zone_num = zeros(self.nz2, npint)
@@ -136,7 +132,6 @@ class Fracture(object):
       self.fcount += n
 
     self.dxy[new_fracs, :] = dxy
-    self.spd[new_fracs, :] = self.frac_spd
     self.fid_node[new_fracs, :] = column_stack((
         fids,
         nodes
@@ -152,20 +147,20 @@ class Fracture(object):
     self.fnum += n
     return new_fracs
 
-  def _do_steps(self, active, ndxy):
-    mask = ndxy[:, 0] >= -1.0
+  def _do_steps(self, active, new_dxy):
+    mask = new_dxy[:, 0] >= -1.0
     n = mask.sum()
     if n<1:
       return False
 
-    ndxy = ndxy[mask, :]
+    new_dxy = new_dxy[mask, :]
     active = active[mask, 0]
     ii = self.fid_node[active, 1].squeeze()
-    new_xy = self.xy[ii, :] + ndxy*self.frac_stp
+    new_xy = self.xy[ii, :] + new_dxy*self.frac_stp
     new_nodes = self._add_nodes(new_xy)
 
     self._add_fracs(
-        ndxy,
+        new_dxy,
         new_nodes,
         fids=self.fid_node[active, 0],
         replace_active=True
@@ -176,7 +171,7 @@ class Fracture(object):
   def print_debug(self, num, fnum, anum, meta=None):
     print('DBG itt', self.itt, 'num', num, 'fnum', fnum, 'anum', anum, '--------------')
     print('tmp\n', self.tmp[:anum, :], '\n')
-    print('ndxy\n', self.ndxy[:anum, :], '\n')
+    print('new_dxy\n', self.new_dxy[:anum, :], '\n')
     print('active\n', self.active[:anum, :], '\n')
     print('fid_node\n', self.fid_node[:fnum, :], '\n')
     print('dxy\n', self.dxy[:fnum, :], '\n')
@@ -232,6 +227,81 @@ class Fracture(object):
     new_nodes = self._add_nodes(xy)
     self._add_fracs(dxy, new_nodes)
 
+  def frac(self, factor, angle, max_active, dbg=False):
+    num = self.num
+    fnum = self.fnum
+    anum = self.anum
+
+    if anum>max_active:
+      return 0
+
+    f_inds = (random(fnum)<factor).nonzero()[0]
+
+    n = len(f_inds)
+    if n<1:
+      return 0
+
+    visited = self.visited[:num]
+    cand_ii = self.fid_node[f_inds, 1]
+
+    xy = self.xy[:num, :]
+    new = arange(fnum, fnum+n)
+    orig_dxy = self.dxy[f_inds, :]
+
+    diff_theta = (-1)**randint(2, size=n)*HPI + (0.5-random(n)) * angle
+    theta = arctan2(orig_dxy[:, 1], orig_dxy[:, 0]) + diff_theta
+
+    fid_node = column_stack((
+        new,
+        cand_ii
+        ))
+    cand_dxy = column_stack((
+        cos(theta),
+        sin(theta)
+        ))
+
+    nactive = arange(n)
+
+    tmp_dxy = self.tmp_dxy[:n, :]
+
+    self.update_zone_map()
+
+    self.cuda_calc_stp(
+        npint(self.nz),
+        npint(self.zone_leap),
+        npint(num),
+        npint(n),
+        npint(n),
+        npfloat(self.frac_dot),
+        npfloat(self.frac_dst),
+        npfloat(self.frac_stp),
+        npint(self.ignore_fracture_sources),
+        drv.In(visited),
+        drv.In(fid_node),
+        drv.In(nactive),
+        drv.Out(self.tmp[:n, :]),
+        drv.In(xy),
+        drv.In(cand_dxy),
+        drv.Out(tmp_dxy),
+        drv.In(self.zone_num),
+        drv.In(self.zone_node),
+        block=(self.threads,1,1),
+        grid=(int(n//self.threads + 1), 1) # this cant be a numpy int for some reason
+        )
+
+    mask = tmp_dxy[:, 0] >= -1.0
+    n = mask.sum()
+
+    if n<1:
+      return 0
+
+    nodes = cand_ii[mask]
+    self._add_fracs(cand_dxy[mask, :], nodes)
+
+    if dbg:
+      self.print_debug(num, fnum, anum, meta='new: {:d}'.format(n))
+    return n
+
   def frac_front(self, factor, angle, dbg=False):
     inds = (random(self.anum)<factor).nonzero()[0]
 
@@ -265,7 +335,7 @@ class Fracture(object):
 
     nactive = arange(n)
 
-    ndxy = self.cand_ndxy[:n, :]
+    tmp_dxy = self.tmp_dxy[:n, :]
 
     self.update_zone_map()
 
@@ -278,20 +348,21 @@ class Fracture(object):
         npfloat(self.frac_dot),
         npfloat(self.frac_dst),
         npfloat(self.frac_stp),
+        npint(self.ignore_fracture_sources),
         drv.In(visited),
         drv.In(fid_node),
         drv.In(nactive),
         drv.Out(self.tmp[:n, :]),
         drv.In(xy),
         drv.In(cand_dxy),
-        drv.Out(ndxy),
+        drv.Out(tmp_dxy),
         drv.In(self.zone_num),
         drv.In(self.zone_node),
         block=(self.threads,1,1),
         grid=(int(n//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    mask = ndxy[:, 0] >= -1.0
+    mask = tmp_dxy[:, 0] >= -1.0
     n = mask.sum()
 
     if n<1:
@@ -316,13 +387,13 @@ class Fracture(object):
     active = self.active[:anum]
     fid_node = self.fid_node[:fnum]
     dxy = self.dxy[:fnum, :]
-    ndxy = self.ndxy[:anum, :]
+    new_dxy = self.new_dxy[:anum, :] # currently active fractures?
 
     self.update_zone_map()
 
     tmp = self.tmp[:anum, :]
     tmp[:,:] = -1
-    ndxy[:,:] = -10
+    new_dxy[:,:] = -10
     self.cuda_calc_stp(
         npint(self.nz),
         npint(self.zone_leap),
@@ -332,20 +403,21 @@ class Fracture(object):
         npfloat(self.frac_dot),
         npfloat(self.frac_dst),
         npfloat(self.frac_stp),
+        npint(self.ignore_fracture_sources),
         drv.In(visited),
         drv.In(fid_node),
         drv.In(active),
         drv.InOut(tmp),
         drv.In(xy),
         drv.In(dxy),
-        drv.Out(ndxy),
+        drv.Out(new_dxy),
         drv.In(self.zone_num),
         drv.In(self.zone_node),
         block=(self.threads,1,1),
         grid=(int(anum//self.threads + 1), 1) # this cant be a numpy int for some reason
         )
 
-    res = self._do_steps(active, ndxy)
+    res = self._do_steps(active, new_dxy)
 
     return res
 
