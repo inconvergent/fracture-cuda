@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from numpy.random import randint
+from numpy.random import random
+
 
 BACK = [1, 1, 1, 1]
 FRONT = [0, 0, 0, 0.01]
@@ -9,12 +12,12 @@ NMAX = 10**8
 SIZE = 3000
 ONE = 1./SIZE
 
-FRAC_DOT = 0.8
+FRAC_DOT = 0.99 + random() * 0.02
 FRAC_DST = 30*ONE
 FRAC_STP = ONE
 
 SPAWN_ANGLE = 0.0
-SPAWN_FACTOR = 0.03
+SPAWN_FACTOR = random() * 0.01 + 0.012
 
 THREADS = 1024
 ZONE_LEAP = 1024*20
@@ -22,14 +25,16 @@ ZONE_LEAP = 1024*20
 EDGE = 0.05
 SOURCES = 500000
 
-INIT_FRACS = 20
+INIT_FRACS = randint(20, 35)
 
 DRAW_ITT = 400
 
 DBG = False
 
 CMULT = 20
-GRAINS = 30
+GRAINS = 35
+
+FRAC_RAD = 2.5*ONE
 
 
 def show(sand, f):
@@ -43,7 +48,7 @@ def show(sand, f):
     b = frac[:-1:, :]
     sand.paint_filled_circle_strokes(
         a, b,
-        ones(len(a), 'float')*FRAC_STP, CMULT,
+        ones(len(a), 'float')*FRAC_RAD, CMULT,
         ones(len(a), 'int')*GRAINS
         )
 
@@ -51,7 +56,6 @@ def show(sand, f):
 def main():
   from modules.fracture import Fracture
   from numpy.random import random
-  from numpy import linspace
   from iutils.random import darts_rect
   from time import time
   from sand import Sand

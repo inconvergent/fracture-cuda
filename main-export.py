@@ -9,22 +9,22 @@ CYAN = [0, 0.5, 0.5, 0.4]
 BLUE = [0, 0, 1, 0.3]
 
 NMAX = 10**6
-SIZE = 1000
+SIZE = 512
 ONE = 1./SIZE
 LINEWIDTH = ONE*1.5
 
-FRAC_DOT = 0.8
+FRAC_DOT = 0.97
 FRAC_DST = 30*ONE
 FRAC_STP = ONE
 
 SPAWN_ANGLE = 0.0
-SPAWN_FACTOR = 0.04
+SPAWN_FACTOR = 0.06
 
 THREADS = 512
 ZONE_LEAP = 1024*10
 
-EDGE = 0.1
-SOURCES = 30000
+EDGE = 0.05
+SOURCES = 20000
 
 DRAW_ITT = 20
 
@@ -74,12 +74,13 @@ def main():
       FRAC_DOT,
       FRAC_DST,
       FRAC_STP,
+      ignore_fracture_sources=True,
       initial_sources=initial_sources,
       zone_leap=ZONE_LEAP,
       nmax=NMAX
       )
 
-  for _ in range(20):
+  for _ in range(2):
     F.blow(1, EDGE+random((1, 2))*(1.0-2.0*EDGE))
 
   def wrap(render):
